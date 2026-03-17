@@ -1,6 +1,7 @@
 import { jest } from '@jest/globals'
 import { prepareEmpty } from '@pnpm/prepare'
-import type { ProjectRootDir, ProjectsGraph } from '@pnpm/types'
+import { type ProjectRootDir, type ProjectsGraph } from '@pnpm/types'
+
 import { DEFAULT_OPTS } from './utils/index.js'
 
 jest.unstable_mockModule('@pnpm/run-npm', () => ({
