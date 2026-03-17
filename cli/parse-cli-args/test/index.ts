@@ -176,6 +176,25 @@ test('if a help option is used with an unknown command, do not set cmd to "help"
   expect(fallbackCommandUsed).toBeTruthy()
 })
 
+test('version --help is handled as pnpm help until a version argument is provided', async () => {
+  const { cmd, params } = await parseCliArgs({
+    ...DEFAULT_OPTS,
+    escapeArgs: ['version'],
+  }, ['version', '--help'])
+  expect(cmd).toBe('help')
+  expect(params).toStrictEqual(['version', '--help'])
+})
+
+test('version escapes arguments after the version argument, including in recursive mode', async () => {
+  const { cmd, options, params } = await parseCliArgs({
+    ...DEFAULT_OPTS,
+    escapeArgs: ['version'],
+  }, ['-r', 'version', 'minor', '--help'])
+  expect(cmd).toBe('version')
+  expect(options).toHaveProperty(['recursive'])
+  expect(params).toStrictEqual(['minor', '--help'])
+})
+
 test('no command', async () => {
   const { cmd } = await parseCliArgs({
     ...DEFAULT_OPTS,

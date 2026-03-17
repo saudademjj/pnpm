@@ -114,19 +114,31 @@ export async function parseCliArgs (
       return opts.escapeArgs
     }
 
-    // We'd like everything after the run script's name to be passed to the
-    // script's argv itself. For example, "pnpm run echo --test" should pass
-    // "--test" to the "echo" script. This requires determining the script's
-    // name and declaring it as the "escape arg".
+    if (cmd === 'version') {
+      const versionArgs = noptExploratoryResults.argv.remain.slice(recursiveCommandUsed ? 2 : 1)
+      const doubleDashIndex = versionArgs.indexOf('--')
+      if (doubleDashIndex !== -1) {
+        return versionArgs[doubleDashIndex + 1] == null ? undefined : [versionArgs[doubleDashIndex + 1]]
+      }
+      const versionArg = versionArgs.find((arg) => !arg.startsWith('-'))
+      return versionArg == null ? undefined : [versionArg]
+    }
+
+    // We'd like everything after the run script's or dlx command's name to be
+    // passed to the underlying command's argv itself. For example,
+    // "pnpm run echo --test" should pass "--test" to the "echo" script. This
+    // requires determining the command name and declaring it as the "escape
+    // arg".
     //
-    // The name of the run script is normally the second argument (ex: pnpm
-    // run foo), but can be pushed back by recursive commands (ex: pnpm
-    // recursive run foo) or becomes the first argument when the fallback
-    // command (ex: pnpm foo) is set to 'run'.
-    const indexOfRunScriptName = 1 +
+    // The name is normally the second argument (ex: pnpm run foo), but can be
+    // pushed back by recursive commands (ex: pnpm recursive run foo) or become
+    // the first argument when the fallback command (ex: pnpm foo) is set to
+    // 'run'.
+    const escapeArgIndex = 1 +
       (recursiveCommandUsed ? 1 : 0) +
       (fallbackCommandUsed && opts.fallbackCommand === 'run' ? -1 : 0)
-    return [noptExploratoryResults.argv.remain[indexOfRunScriptName]]
+    const escapeArg = noptExploratoryResults.argv.remain[escapeArgIndex]
+    return escapeArg == null ? undefined : [escapeArg]
   }
 
   const { argv, ...options } = nopt(

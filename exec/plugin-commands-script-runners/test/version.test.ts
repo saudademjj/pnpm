@@ -15,6 +15,15 @@ beforeEach(() => {
   jest.clearAllMocks()
 })
 
+test('version exposes the supported CLI options', () => {
+  expect(Object.keys(version.cliOptionsTypes()).sort()).toStrictEqual([
+    'npm-path',
+    'recursive',
+    'reverse',
+    'sort',
+  ])
+})
+
 test('version should invoke runNpm with version params and dir', async () => {
   prepareEmpty()
 

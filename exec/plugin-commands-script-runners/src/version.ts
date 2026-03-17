@@ -1,7 +1,6 @@
 import nodePath from 'node:path'
 import {
   type Config,
-  getWorkspaceConcurrency,
   types as allTypes,
 } from '@pnpm/config'
 import { PnpmError } from '@pnpm/error'
@@ -13,11 +12,8 @@ import {
   type ProjectRootDir,
   type ProjectRootDirRealPath,
 } from '@pnpm/types'
-import pLimit from 'p-limit'
 import { pick } from 'ramda'
-import * as renderHelpModule from 'render-help'
-
-const renderHelp = renderHelpModule as any // eslint-disable-line @typescript-eslint/no-explicit-any
+import renderHelp from 'render-help'
 
 export interface VersionCommandResponse {
   exitCode: number
@@ -33,7 +29,12 @@ export function rcOptionsTypes (): Record<string, unknown> {
 
 export function cliOptionsTypes (): Record<string, unknown> {
   return {
+    ...rcOptionsTypes(),
+    ...pick([
+      'sort',
+    ], allTypes),
     recursive: Boolean,
+    reverse: Boolean,
   }
 }
 
@@ -55,7 +56,6 @@ export type VersionOpts = Pick<Config,
   recursive?: boolean
   reverse?: boolean
   sort?: boolean
-  workspaceConcurrency?: number
 }
 
 export async function handler (
@@ -91,32 +91,28 @@ export async function handler (
     throw new PnpmError('RECURSIVE_VERSION_NO_PACKAGE', 'No package found in this workspace')
   }
 
-  const limitRun = pLimit(getWorkspaceConcurrency(opts.workspaceConcurrency))
   const userConfigPath = opts.configDir ? nodePath.join(opts.configDir, 'rc') : undefined
   let exitCode = 0
 
   for (const chunk of chunks) {
-    // eslint-disable-next-line no-await-in-loop
-    await Promise.all(chunk.map(async (prefix) =>
-      limitRun(async () => {
-        try {
-          const { status } = runNpm(opts.npmPath, ['version', ...params], {
-            cwd: prefix,
-            env: opts.extraEnv,
-            userConfigPath,
-          })
-          if (status !== 0 && status !== null) {
-            exitCode = status
-          }
-        } catch (err: any) { // eslint-disable-line
-          if (!opts.recursive && typeof err.exitCode === 'number') {
-            exitCode = err.exitCode
-            return
-          }
-          throw err
+    for (const prefix of chunk) {
+      try {
+        const { status } = runNpm(opts.npmPath, ['version', ...params], {
+          cwd: prefix,
+          env: opts.extraEnv,
+          userConfigPath,
+        })
+        if (status !== 0 && status !== null) {
+          exitCode = status
         }
-      })
-    ))
+      } catch (err: any) { // eslint-disable-line
+        if (!opts.recursive && typeof err.exitCode === 'number') {
+          exitCode = err.exitCode
+          continue
+        }
+        throw err
+      }
+    }
   }
 
   if (exitCode !== 0) {

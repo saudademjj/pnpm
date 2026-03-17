@@ -1,7 +1,16 @@
 import fs from 'fs'
 import path from 'path'
-import { preparePackages } from '@pnpm/prepare'
+import { prepareEmpty, preparePackages } from '@pnpm/prepare'
 import { execPnpmSync } from './utils/index.js'
+
+test('pnpm version --help prints pnpm help before forwarding args to npm', () => {
+  prepareEmpty()
+
+  const result = execPnpmSync(['version', '--help'])
+
+  expect(result.status).toBe(0)
+  expect(result.stdout.toString()).toContain('pnpm version <new-version>')
+})
 
 test('pnpm -r version minor should bump packages with workspace protocol dependencies without crashing', () => {
   preparePackages([
