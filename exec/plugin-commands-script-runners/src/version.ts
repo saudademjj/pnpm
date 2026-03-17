@@ -1,13 +1,13 @@
-import path from 'path'
-import { runNpm } from '@pnpm/run-npm'
-import * as renderHelpModule from 'render-help'
-import { type Config, types as allTypes, getWorkspaceConcurrency } from '@pnpm/config'
+import nodePath from 'node:path'
+import { getWorkspaceConcurrency, type Config, types as allTypes } from '@pnpm/config'
 import { PnpmError } from '@pnpm/error'
 import { tryReadProjectManifest } from '@pnpm/read-project-manifest'
-import { type ProjectRootDir, type Project, type ProjectRootDirRealPath } from '@pnpm/types'
+import { runNpm } from '@pnpm/run-npm'
 import { sortPackages } from '@pnpm/sort-packages'
+import type { Project, ProjectRootDir, ProjectRootDirRealPath } from '@pnpm/types'
 import pLimit from 'p-limit'
 import { pick } from 'ramda'
+import * as renderHelpModule from 'render-help'
 
 const renderHelp = renderHelpModule as any // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -84,7 +84,7 @@ export async function handler (
   }
 
   const limitRun = pLimit(getWorkspaceConcurrency(opts.workspaceConcurrency))
-  const userConfigPath = opts.configDir ? path.join(opts.configDir, 'rc') : undefined
+  const userConfigPath = opts.configDir ? nodePath.join(opts.configDir, 'rc') : undefined
   let exitCode = 0
 
   for (const chunk of chunks) {
